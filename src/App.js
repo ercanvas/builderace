@@ -458,21 +458,65 @@ function Game() {
     const loader = new GLTFLoader();
     
     try {
-      const [treeModel, rockModel, houseModel] = await Promise.all([
+      const [treeModel, rockModel] = await Promise.all([
         loader.loadAsync('/models/tree/tree.gltf'),
-        loader.loadAsync('/models/rock/rock.gltf'),
-        loader.loadAsync('/models/house/house.gltf')
+        loader.loadAsync('/models/rock/rock.gltf')
       ]);
 
+      const processModel = (model) => {
+        model.scene.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+        return model.scene;
+      };
+
       setModels({
-        tree: treeModel.scene.clone(),
-        rock: rockModel.scene.clone(),
-        house: houseModel.scene.clone()
+        tree: processModel(treeModel),
+        rock: processModel(rockModel)
       });
     } catch (error) {
       console.error('Error loading models:', error);
+      // Fallback to primitive geometries if models fail to load
+      const fallbackTree = createFallbackTree();
+      const fallbackRock = createFallbackRock();
+      setModels({
+        tree: fallbackTree,
+        rock: fallbackRock
+      });
     }
   }, []);
+
+  // Add fallback creation functions
+  const createFallbackTree = () => {
+    const group = new THREE.Group();
+    
+    // Trunk
+    const trunk = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 3, 8),
+      new THREE.MeshBasicMaterial({ color: 0x8B4513 })
+    );
+    trunk.position.y = 1.5;
+    
+    // Leaves
+    const leaves = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0x228B22 })
+    );
+    leaves.position.y = 3;
+    
+    group.add(trunk, leaves);
+    return group;
+  };
+
+  const createFallbackRock = () => {
+    return new THREE.Mesh(
+      new THREE.SphereGeometry(1, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0x808080 })
+    );
+  };
 
   useEffect(() => {
     if (!isLoggedIn) {

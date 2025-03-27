@@ -1,0 +1,39 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "Manual"
+  },
+  "scene": 0,
+  "scenes": [{ "nodes": [0] }],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "Tree"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "TreeMaterial",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [0.3, 0.6, 0.2, 1.0],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      }
+    }
+  ]
+}
