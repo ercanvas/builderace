@@ -456,36 +456,54 @@ function Game() {
 
   const loadModels = useCallback(async () => {
     const loader = new GLTFLoader();
+    console.log('Starting to load models...');
     
     try {
+      // Create fallback geometries first
+      const fallbackTree = createFallbackTree();
+      const fallbackRock = createFallbackRock();
+      
+      // Set fallbacks immediately so game can start
+      setModels({
+        tree: fallbackTree,
+        rock: fallbackRock
+      });
+
+      // Try to load actual models
       const [treeModel, rockModel] = await Promise.all([
-        loader.loadAsync('/models/tree/tree.gltf'),
-        loader.loadAsync('/models/rock/rock.gltf')
+        loader.loadAsync('/models/tree/tree.gltf').catch(error => {
+          console.warn('Failed to load tree model:', error);
+          return { scene: fallbackTree };
+        }),
+        loader.loadAsync('/models/rock/rock.gltf').catch(error => {
+          console.warn('Failed to load rock model:', error);
+          return { scene: fallbackRock };
+        })
       ]);
+
+      console.log('Models loaded:', { treeModel, rockModel });
 
       const processModel = (model) => {
         model.scene.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+            // Ensure materials are set up properly
+            if (child.material) {
+              child.material.needsUpdate = true;
+            }
           }
         });
         return model.scene;
       };
 
+      // Update with real models if they loaded successfully
       setModels({
         tree: processModel(treeModel),
         rock: processModel(rockModel)
       });
     } catch (error) {
-      console.error('Error loading models:', error);
-      // Fallback to primitive geometries if models fail to load
-      const fallbackTree = createFallbackTree();
-      const fallbackRock = createFallbackRock();
-      setModels({
-        tree: fallbackTree,
-        rock: fallbackRock
-      });
+      console.error('Error in loadModels:', error);
     }
   }, []);
 
@@ -519,71 +537,76 @@ function Game() {
   };
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      // Check for stored user data
-      const storedData = localStorage.getItem('gameUserData');
-      if (storedData) {
-        const { username: storedUsername, selectedColor: storedColor } = JSON.parse(storedData);
-        setUsername(storedUsername);
-        setSelectedColor(storedColor);
-        setIsLoggedIn(true);
-        
-        // Clean up stored data
-        localStorage.removeItem('gameUserData');
+    // Load models first
+    loadModels().then(() => {
+      console.log('Models loaded, starting game...');
+      // Rest of game initialization
+      if (!isLoggedIn) {
+        // Check for stored user data
+        const storedData = localStorage.getItem('gameUserData');
+        if (storedData) {
+          const { username: storedUsername, selectedColor: storedColor } = JSON.parse(storedData);
+          setUsername(storedUsername);
+          setSelectedColor(storedColor);
+          setIsLoggedIn(true);
+          
+          // Clean up stored data
+          localStorage.removeItem('gameUserData');
+        }
+        return;
       }
-      return;
-    }
-
-    // Update socket connection to use secure WebSocket
-    socketRef.current = io(process.env.REACT_APP_SOCKET_URL, {
-      withCredentials: true,
-      transports: ['websocket', 'polling'],
-      secure: true,
-      rejectUnauthorized: false,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-      forceNew: true
-    });
-
-    socketRef.current.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
-      // Attempt to reconnect with polling if websocket fails
-      if (socketRef.current.io.opts.transports[0] === 'websocket') {
-        socketRef.current.io.opts.transports = ['polling', 'websocket'];
-      }
-    });
-
-    // Oda katılım olayı
-    socketRef.current.emit('joinRoom', {
-      roomId,
-      isRandom: !roomId,
-      playerData: {
-        username,
-        color: selectedColor
-      }
-    });
-
-    // Odaya katılım başarılı olduğunda
-    socketRef.current.on('roomJoined', ({ roomData, currentPlayers }) => {
-      initGame(roomData);
-      
-      // Mevcut diğer oyuncuları ekle
-      Object.entries(currentPlayers).forEach(([playerId, playerInfo]) => {
-        if (playerId !== socketRef.current.id) {
-          createAndAddPlayer(playerInfo);
+  
+      // Update socket connection to use secure WebSocket
+      socketRef.current = io(process.env.REACT_APP_SOCKET_URL, {
+        withCredentials: true,
+        transports: ['websocket', 'polling'],
+        secure: true,
+        rejectUnauthorized: false,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        forceNew: true
+      });
+  
+      socketRef.current.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+        // Attempt to reconnect with polling if websocket fails
+        if (socketRef.current.io.opts.transports[0] === 'websocket') {
+          socketRef.current.io.opts.transports = ['polling', 'websocket'];
         }
       });
+  
+      // Oda katılım olayı
+      socketRef.current.emit('joinRoom', {
+        roomId,
+        isRandom: !roomId,
+        playerData: {
+          username,
+          color: selectedColor
+        }
+      });
+  
+      // Odaya katılım başarılı olduğunda
+      socketRef.current.on('roomJoined', ({ roomData, currentPlayers }) => {
+        initGame(roomData);
+        
+        // Mevcut diğer oyuncuları ekle
+        Object.entries(currentPlayers).forEach(([playerId, playerInfo]) => {
+          if (playerId !== socketRef.current.id) {
+            createAndAddPlayer(playerInfo);
+          }
+        });
+      });
+  
+      // Cleanup
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+        }
+      };
     });
-
-    // Cleanup
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
-  }, [isLoggedIn, roomId, username, selectedColor, createAndAddPlayer]);
+  }, [isLoggedIn, roomId, username, selectedColor, createAndAddPlayer, loadModels]);
 
   // Oyun başlatma işlemleri
   const initGame = useCallback((roomData) => {
@@ -946,11 +969,20 @@ function Game() {
     // 🌳 AĞAÇLAR (Rastgele Yerleştirme)
     const trees = [];
     function createTree(x, z) {
-      if (!models.tree) return;
+      if (!models.tree) {
+        console.warn('Tree model not available');
+        return;
+      }
       
       const tree = models.tree.clone();
+      // Ensure the tree is visible and properly positioned
+      tree.visible = true;
       tree.position.set(x, 0, z);
       tree.scale.set(0.5, 0.5, 0.5);
+      
+      // Debug log
+      console.log('Created tree at:', { x, z }, tree);
+      
       scene.add(tree);
       trees.push({ mesh: tree, x, z });
     }
@@ -972,11 +1004,20 @@ function Game() {
     const rocks = [];
     window.gameRocks = rocks; // Store rocks reference globally
     function createRock(x, z) {
-      if (!models.rock) return;
+      if (!models.rock) {
+        console.warn('Rock model not available');
+        return;
+      }
       
       const rock = models.rock.clone();
+      // Ensure the rock is visible and properly positioned
+      rock.visible = true;
       rock.position.set(x, 0, z);
       rock.scale.set(0.3, 0.3, 0.3);
+      
+      // Debug log
+      console.log('Created rock at:', { x, z }, rock);
+      
       scene.add(rock);
       rocks.push({ mesh: rock, x, z });
     }

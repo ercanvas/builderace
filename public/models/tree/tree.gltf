@@ -4,33 +4,57 @@
     "generator": "Manual"
   },
   "scene": 0,
-  "scenes": [{ "nodes": [0] }],
+  "scenes": [{ "nodes": [0, 1] }],
   "nodes": [
     {
       "mesh": 0,
-      "name": "Tree"
+      "name": "Trunk",
+      "translation": [0, 1.5, 0]
+    },
+    {
+      "mesh": 1,
+      "name": "Leaves",
+      "translation": [0, 3, 0]
     }
   ],
   "meshes": [
     {
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 0,
-            "NORMAL": 1,
-            "TEXCOORD_0": 2
-          },
-          "indices": 3,
-          "material": 0
-        }
-      ]
+      "primitives": [{
+        "attributes": {
+          "POSITION": 0,
+          "NORMAL": 1
+        },
+        "indices": 2,
+        "material": 0
+      }]
+    },
+    {
+      "primitives": [{
+        "attributes": {
+          "POSITION": 3,
+          "NORMAL": 4
+        },
+        "indices": 5,
+        "material": 1
+      }]
     }
   ],
+  "buffers": [{
+    "uri": "data:application/octet-stream;base64,..."
+  }],
   "materials": [
     {
-      "name": "TreeMaterial",
+      "name": "TrunkMaterial",
       "pbrMetallicRoughness": {
-        "baseColorFactor": [0.3, 0.6, 0.2, 1.0],
+        "baseColorFactor": [0.545, 0.271, 0.075, 1.0],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 1.0
+      }
+    },
+    {
+      "name": "LeavesMaterial",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [0.133, 0.545, 0.133, 1.0],
         "metallicFactor": 0.0,
         "roughnessFactor": 1.0
       }
