@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: catupet-server
+    env: node
+    rootDir: server
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 443
+      - key: FORCE_HTTPS
+        value: "true"
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://builderrace.vercel.app
+    routes:
+      - type: rewrite
+        source: /socket.io/*
+        destination: /socket.io/$1
+    domains:
+      - catupet-server.onrender.com
+    healthCheckPath: /health
