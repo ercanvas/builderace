@@ -459,49 +459,47 @@ function Game() {
     console.log('Starting to load models...');
     
     try {
-      // Create fallback geometries first
+      // Set fallbacks first
       const fallbackTree = createFallbackTree();
       const fallbackRock = createFallbackRock();
-      
-      // Set fallbacks immediately so game can start
       setModels({
         tree: fallbackTree,
         rock: fallbackRock
       });
 
-      // Try to load actual models
-      const [treeModel, rockModel] = await Promise.all([
-        loader.loadAsync('/models/tree/tree.gltf').catch(error => {
-          console.warn('Failed to load tree model:', error);
-          return { scene: fallbackTree };
-        }),
-        loader.loadAsync('/models/rock/rock.gltf').catch(error => {
-          console.warn('Failed to load rock model:', error);
-          return { scene: fallbackRock };
-        })
-      ]);
+      // Try to load models
+      loader.load('/models/tree.glb', 
+        (gltf) => {
+          console.log('Tree model loaded successfully:', gltf);
+          setModels(prev => ({
+            ...prev,
+            tree: gltf.scene
+          }));
+        },
+        (progress) => {
+          console.log('Loading tree model:', (progress.loaded / progress.total * 100) + '%');
+        },
+        (error) => {
+          console.error('Error loading tree model:', error);
+        }
+      );
 
-      console.log('Models loaded:', { treeModel, rockModel });
+      loader.load('/models/rock.glb',
+        (gltf) => {
+          console.log('Rock model loaded successfully:', gltf);
+          setModels(prev => ({
+            ...prev,
+            rock: gltf.scene
+          }));
+        },
+        (progress) => {
+          console.log('Loading rock model:', (progress.loaded / progress.total * 100) + '%');
+        },
+        (error) => {
+          console.error('Error loading rock model:', error);
+        }
+      );
 
-      const processModel = (model) => {
-        model.scene.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            // Ensure materials are set up properly
-            if (child.material) {
-              child.material.needsUpdate = true;
-            }
-          }
-        });
-        return model.scene;
-      };
-
-      // Update with real models if they loaded successfully
-      setModels({
-        tree: processModel(treeModel),
-        rock: processModel(rockModel)
-      });
     } catch (error) {
       console.error('Error in loadModels:', error);
     }

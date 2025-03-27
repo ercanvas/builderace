@@ -8,13 +8,11 @@
   "nodes": [
     {
       "mesh": 0,
-      "name": "Trunk",
-      "translation": [0, 1.5, 0]
+      "name": "Trunk"
     },
     {
       "mesh": 1,
-      "name": "Leaves",
-      "translation": [0, 3, 0]
+      "name": "Leaves"
     }
   ],
   "meshes": [
@@ -39,9 +37,86 @@
       }]
     }
   ],
-  "buffers": [{
-    "uri": "data:application/octet-stream;base64,..."
-  }],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3",
+      "max": [0.5, 3.0, 0.5],
+      "min": [-0.5, 0.0, -0.5]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3",
+      "max": [1.5, 4.5, 1.5],
+      "min": [-1.5, 3.0, -1.5]
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5126,
+      "count": 24,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5123,
+      "count": 36,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 288,
+      "byteOffset": 0
+    },
+    {
+      "buffer": 0,
+      "byteLength": 288,
+      "byteOffset": 288
+    },
+    {
+      "buffer": 0,
+      "byteLength": 72,
+      "byteOffset": 576
+    },
+    {
+      "buffer": 0,
+      "byteLength": 288,
+      "byteOffset": 648
+    },
+    {
+      "buffer": 0,
+      "byteLength": 288,
+      "byteOffset": 936
+    },
+    {
+      "buffer": 0,
+      "byteLength": 72,
+      "byteOffset": 1224
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 1296,
+      "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAAAAAAAAAAAAgL8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAACAvwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8="
+    }
+  ],
   "materials": [
     {
       "name": "TrunkMaterial",
