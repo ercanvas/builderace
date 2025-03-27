@@ -9,6 +9,7 @@ import Portfolio from './components/Portfolio'; // Add Portfolio import
 import { BoxGeometry, MeshBasicMaterial, CylinderGeometry } from 'three';
 import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-dom';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 function Game() {
   const { roomId } = useParams();
@@ -45,6 +46,12 @@ function Game() {
     grassSize: 100,
     dayNightCycle: 8 * 60 * 1000, // 8 dakika (milisaniye cinsinden)
   };
+
+  const [models, setModels] = useState({
+    tree: null,
+    rock: null,
+    house: null
+  });
 
   // Login formu komponenti
   const LoginForm = () => {
@@ -446,6 +453,26 @@ function Game() {
       placeholder.material.uniforms.hovered.value = canBuild ? 1 : 0;
     }
   }, [buildingPlaceholders, BUILDING_COSTS.ROOM.wood, BUILDING_COSTS.ROOM.stone]);
+
+  const loadModels = useCallback(async () => {
+    const loader = new GLTFLoader();
+    
+    try {
+      const [treeModel, rockModel, houseModel] = await Promise.all([
+        loader.loadAsync('/models/tree/tree.gltf'),
+        loader.loadAsync('/models/rock/rock.gltf'),
+        loader.loadAsync('/models/house/house.gltf')
+      ]);
+
+      setModels({
+        tree: treeModel.scene.clone(),
+        rock: rockModel.scene.clone(),
+        house: houseModel.scene.clone()
+      });
+    } catch (error) {
+      console.error('Error loading models:', error);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -875,18 +902,13 @@ function Game() {
     // 🌳 AĞAÇLAR (Rastgele Yerleştirme)
     const trees = [];
     function createTree(x, z) {
-      const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3, 16);
-      const trunkMaterial = new THREE.MeshBasicMaterial({ color: 0x8B4513 });
-      const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-      trunk.position.set(x, 1.5, z);
-
-      const leavesGeometry = new THREE.SphereGeometry(1.5, 16, 16);
-      const leavesMaterial = new THREE.MeshBasicMaterial({ color: 0xAAFF00 });
-      const leaves = new THREE.Mesh(leavesGeometry, leavesMaterial);
-      leaves.position.set(x, 3, z);
-
-      scene.add(trunk, leaves);
-      trees.push({ trunk, leaves, x, z });
+      if (!models.tree) return;
+      
+      const tree = models.tree.clone();
+      tree.position.set(x, 0, z);
+      tree.scale.set(0.5, 0.5, 0.5);
+      scene.add(tree);
+      trees.push({ mesh: tree, x, z });
     }
 
     // 🎲 20 AĞAÇ RASTGELE KONUMA EKLE
@@ -906,10 +928,11 @@ function Game() {
     const rocks = [];
     window.gameRocks = rocks; // Store rocks reference globally
     function createRock(x, z) {
-      const rockGeometry = new THREE.SphereGeometry(1, 8, 8);
-      const rockMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 }); // Gri renk
-      const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-      rock.position.set(x, 0.5, z); // Yerden biraz yukarıda
+      if (!models.rock) return;
+      
+      const rock = models.rock.clone();
+      rock.position.set(x, 0, z);
+      rock.scale.set(0.3, 0.3, 0.3);
       scene.add(rock);
       rocks.push({ mesh: rock, x, z });
     }
@@ -1407,7 +1430,7 @@ function Game() {
       delete window.drawUI;
       delete window.moveChild;
     };
-  }, [username, selectedColor, createChild, handleMouseMove]);  // Empty dependency array since it doesn't depend on any props/state
+  }, [username, selectedColor, createChild, handleMouseMove, models]);  // Empty dependency array since it doesn't depend on any props/state
 
   // Video tamamlandığında çağrılacak fonksiyon
   const handleVideoComplete = () => {
