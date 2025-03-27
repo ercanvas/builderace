@@ -456,7 +456,6 @@ function Game() {
 
   const loadModels = useCallback(async () => {
     const loader = new GLTFLoader();
-    console.log('Starting to load models...');
     
     try {
       // Set fallbacks first
@@ -467,41 +466,20 @@ function Game() {
         rock: fallbackRock
       });
 
-      // Try to load models
-      loader.load('/models/tree.glb', 
-        (gltf) => {
-          console.log('Tree model loaded successfully:', gltf);
-          setModels(prev => ({
-            ...prev,
-            tree: gltf.scene
-          }));
-        },
-        (progress) => {
-          console.log('Loading tree model:', (progress.loaded / progress.total * 100) + '%');
-        },
-        (error) => {
-          console.error('Error loading tree model:', error);
-        }
-      );
+      // Load glb models with proper paths
+      const [treeGLB, rockGLB] = await Promise.all([
+        loader.loadAsync('/models/tree.glb'),
+        loader.loadAsync('/models/rock.glb')
+      ]);
 
-      loader.load('/models/rock.glb',
-        (gltf) => {
-          console.log('Rock model loaded successfully:', gltf);
-          setModels(prev => ({
-            ...prev,
-            rock: gltf.scene
-          }));
-        },
-        (progress) => {
-          console.log('Loading rock model:', (progress.loaded / progress.total * 100) + '%');
-        },
-        (error) => {
-          console.error('Error loading rock model:', error);
-        }
-      );
+      setModels(prev => ({
+        ...prev,
+        tree: treeGLB.scene.clone(),
+        rock: rockGLB.scene.clone() 
+      }));
 
     } catch (error) {
-      console.error('Error in loadModels:', error);
+      // Keep using fallbacks if loading fails
     }
   }, []);
 
@@ -537,7 +515,6 @@ function Game() {
   useEffect(() => {
     // Load models first
     loadModels().then(() => {
-      console.log('Models loaded, starting game...');
       // Rest of game initialization
       if (!isLoggedIn) {
         // Check for stored user data
@@ -568,7 +545,6 @@ function Game() {
       });
   
       socketRef.current.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
         // Attempt to reconnect with polling if websocket fails
         if (socketRef.current.io.opts.transports[0] === 'websocket') {
           socketRef.current.io.opts.transports = ['polling', 'websocket'];
@@ -968,7 +944,6 @@ function Game() {
     const trees = [];
     function createTree(x, z) {
       if (!models.tree) {
-        console.warn('Tree model not available');
         return;
       }
       
@@ -977,9 +952,6 @@ function Game() {
       tree.visible = true;
       tree.position.set(x, 0, z);
       tree.scale.set(0.5, 0.5, 0.5);
-      
-      // Debug log
-      console.log('Created tree at:', { x, z }, tree);
       
       scene.add(tree);
       trees.push({ mesh: tree, x, z });
@@ -1003,7 +975,6 @@ function Game() {
     window.gameRocks = rocks; // Store rocks reference globally
     function createRock(x, z) {
       if (!models.rock) {
-        console.warn('Rock model not available');
         return;
       }
       
@@ -1012,9 +983,6 @@ function Game() {
       rock.visible = true;
       rock.position.set(x, 0, z);
       rock.scale.set(0.3, 0.3, 0.3);
-      
-      // Debug log
-      console.log('Created rock at:', { x, z }, rock);
       
       scene.add(rock);
       rocks.push({ mesh: rock, x, z });
@@ -1545,13 +1513,45 @@ function Game() {
   const renderMobileControls = () => {
     return (
       <div className="mobile-controls">
-        <div className="mobile-dpad">
-          <button className="mobile-button" onTouchStart={() => handleMobileControl('ArrowUp')}>⬆</button>
-          <button className="mobile-button" onTouchStart={() => handleMobileControl('ArrowLeft')}>⬅</button>
-          <button className="mobile-button" onTouchStart={() => handleMobileControl('ArrowRight')}>➡</button>
-          <button className="mobile-button" onTouchStart={() => handleMobileControl('ArrowDown')}>⬇</button>
+        <div className="d-pad">
+          <button 
+            className="d-pad-button up"
+            onTouchStart={() => handleMobileControl('ArrowUp')}
+            onTouchEnd={() => handleMobileControl('keyup')}
+          >⬆</button>
+          <div className="d-pad-middle">
+            <button 
+              className="d-pad-button left"
+              onTouchStart={() => handleMobileControl('ArrowLeft')}
+              onTouchEnd={() => handleMobileControl('keyup')}
+            >⬅</button>
+            <button 
+              className="d-pad-button right"
+              onTouchStart={() => handleMobileControl('ArrowRight')} 
+              onTouchEnd={() => handleMobileControl('keyup')}
+            >➡</button>
+          </div>
+          <button 
+            className="d-pad-button down"
+            onTouchStart={() => handleMobileControl('ArrowDown')}
+            onTouchEnd={() => handleMobileControl('keyup')}
+          >⬇</button>
         </div>
-        <button className="mobile-button mobile-jump" onTouchStart={() => handleMobileControl('Space')}>⬆</button>
+        <div className="action-buttons">
+          <button 
+            className="action-button jump"
+            onTouchStart={() => handleMobileControl('Space')}
+            onTouchEnd={() => handleMobileControl('keyup')}
+          >JUMP</button>
+          <button
+            className="action-button cut"
+            onTouchStart={() => handleMobileControl('KeyC')} 
+          >CUT</button>
+          <button
+            className="action-button break"
+            onTouchStart={() => handleMobileControl('KeyX')}
+          >BREAK</button>
+        </div>
       </div>
     );
   };
